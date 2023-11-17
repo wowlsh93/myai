@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
         #question!!
         st.header("PDF에게 무엇을 원하시나요?")
-        question = st.text_input("질문을 입력하세요", "내용을 요약해 줘")
+        question = st.text_input("질문을 입력하세요~", "내용을 요약해 줘")
 
         if st.button("Go!!"):
             with st.spinner("i am working.....^^"):
@@ -82,8 +82,6 @@ if __name__ == '__main__':
                                  callbaaks=[stream_handler])
                 qa_chain = RetrievalQA.from_chain_type(llm, retriever=db.as_retriever())
                 result = qa_chain({"query": question})
-
-                # st.write(result["result"])
 
 
 
