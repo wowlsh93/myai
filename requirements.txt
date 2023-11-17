@@ -3,4 +3,5 @@ streamlit
 openai
 pypdf
 tiktoken
-Chroma
+chromadb
+pysqlite3-binary
