@@ -1,5 +1,10 @@
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+
 import os
 import tempfile
+# from  dotenv import load_dotenv
 
 #AI
 from langchain.document_loaders import PyPDFLoader
@@ -25,6 +30,8 @@ def pdf_to_document(uploaded_file):
     return pages
 
 if __name__ == '__main__':
+
+    # load_dotenv()
 
     st.title("Chat your PDF!!")
     st.write("----")
@@ -53,11 +60,12 @@ if __name__ == '__main__':
         question = st.text_input("질문을 입력하세요")
 
         if st.button("Go!!"):
-            llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
-            qa_chain = RetrievalQA.from_chain_type(llm, retriever=db.as_retriever())
-            result = qa_chain({"query": question})
+            with st.spinner("i am working.....^^"):
+                llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
+                qa_chain = RetrievalQA.from_chain_type(llm, retriever=db.as_retriever())
+                result = qa_chain({"query": question})
 
-            st.write(result)
+                st.write(result["result"])
 
 
 
