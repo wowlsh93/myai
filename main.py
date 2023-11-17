@@ -15,6 +15,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.chains import RetrievalQA
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain.callbacks.base import BaseCallbackHandler
 
 #UI
 import streamlit as st
@@ -29,6 +30,17 @@ def pdf_to_document(uploaded_file):
     loader = PyPDFLoader(temp_filepath)
     pages = loader.load_and_split()
     return pages
+
+
+class StreamHandler(BaseCallbackHandler):
+    def __init__(self, container, initial_text=""):
+        self.container = container
+        self.text = initial_text
+
+    def on_llm_new_token(self, token: str, **kwargs) -> None:
+        self.text+=token
+        self.container.markdown(self.text)
+
 
 if __name__ == '__main__':
 
@@ -60,14 +72,18 @@ if __name__ == '__main__':
 
         if st.button("Go!!"):
             with st.spinner("i am working.....^^"):
+
+                chat_box = st.empty()
+                stream_handler = StreamHandler(chat_box)
+
                 llm = ChatOpenAI(model_name="gpt-3.5-turbo",
                                  temperature=0,
                                  streaming=True,
-                                 callbaaks=[StreamingStdOutCallbackHandler()])
+                                 callbaaks=[stream_handler])
                 qa_chain = RetrievalQA.from_chain_type(llm, retriever=db.as_retriever())
                 result = qa_chain({"query": question})
 
-                st.write(result["result"])
+                # st.write(result["result"])
 
 
 
