@@ -2,24 +2,31 @@ __import__('pysqlite3')
 import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
-
-import os
-import tempfile
-
-#AI
+from langchain.callbacks.base import BaseCallbackHandler
+from typing import Any, Optional, Union
+from uuid import UUID
+from dotenv import load_dotenv
+from langchain.schema.output import ChatGenerationChunk, GenerationChunk
+import streamlit as st
 from langchain.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
+import openai
 from langchain.chat_models import ChatOpenAI
-from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.chains import RetrievalQA
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain.callbacks.base import BaseCallbackHandler
+import tempfile
+import os
 
-#UI
-import streamlit as st
+load_dotenv()
 
+st.header('PDF Genie')
+st.write('질문하실 PDF를 업로드해주세요.')
+st.write('---')
+
+
+# # Make a temp folder can store uploaded file.
 
 def pdf_to_document(uploaded_file):
     temp_dir = tempfile.TemporaryDirectory()
@@ -27,63 +34,74 @@ def pdf_to_document(uploaded_file):
     with open(temp_filepath, "wb") as f:
         f.write(uploaded_file.getvalue())
 
+    # Load file and Split by "page".
     loader = PyPDFLoader(temp_filepath)
     pages = loader.load_and_split()
+    print('file loaded')
     return pages
 
 
-class StreamHandler(BaseCallbackHandler):
+class StreamingHandler(BaseCallbackHandler):
     def __init__(self, container, initial_text=""):
         self.container = container
         self.text = initial_text
 
     def on_llm_new_token(self, token: str, **kwargs) -> None:
-        self.text+=token
+        self.text += token
         self.container.markdown(self.text)
 
 
-if __name__ == '__main__':
+with st.sidebar:
+    st.header('파일업로드')
+    uploaded_files = st.file_uploader(
+        '파일을 선택해주세요.',
+        accept_multiple_files=True
+    )
 
-    st.title("Chat your PDF!!")
-    st.write("----")
+    # uploaded_file_no = (uploaded_file)
+    if uploaded_files:
+        # load text
+        for uploaded_file in uploaded_files:
+            bytes_data = uploaded_file
+            pages = pdf_to_document(bytes_data)
 
-    uploaded_file = st.file_uploader("Choose a file")
+            # split text
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=500,
+                chunk_overlap=20,
+                length_function=len,
+                # add_start_index=True,
+            )
+            texts = text_splitter.split_documents(pages)
 
-    if uploaded_file is not None:
-        pages = pdf_to_document(uploaded_file)
+            # embedding and store
+            embedding_model = OpenAIEmbeddings()
+            db = Chroma.from_documents(texts, embedding_model)
 
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=300,
-            chunk_overlap=20,
-            length_function=len,
-            is_separator_regex=False,
+            st.write(bytes_data.name, 'File DONE')
+
+# show input box
+question = st.text_input('질문을 입력해주세요.')
+if st.button('궁금해', type="primary"):
+    with st.spinner('처리중입니다'):
+        chat_box = st.empty()
+        stream_hander = StreamingHandler(chat_box)
+        myllm = ChatOpenAI(
+            temperature=0,
+            max_tokens=100,
+            streaming=True,
+            callbacks=[stream_hander],
         )
+        qa = RetrievalQA.from_chain_type(
+            llm=myllm,
+            retriever=db.as_retriever()
+        )
+        answer = qa.run(question)
+        qa.run(question)
+        # st.write('질문 :', question)
+        # st.write('답변 :', answer)
 
-        texts = text_splitter.split_documents(pages)
-
-        embeddings_model = OpenAIEmbeddings()
-
-        db = Chroma.from_documents(texts, embeddings_model)
-
-
-        #question!!
-        st.header("PDF에게 무엇을 원하시나요?")
-        question = st.text_input("질문을 입력하세요~!", "내용을 요약해 줘!!")
-
-        if st.button("Go!!"):
-            with st.spinner("i am working.....^^"):
-
-                chat_box = st.empty()
-                stream_handler = StreamHandler(chat_box)
-
-                llm = ChatOpenAI(model_name="gpt-3.5-turbo",
-                                 temperature=0,
-                                 streaming=True,
-                                 callbaaks=[stream_handler])
-                qa_chain = RetrievalQA.from_chain_type(llm, retriever=db.as_retriever())
-                qa_chain({"query": question})
-
-
+print('DONE')
 
 
 
