@@ -81,7 +81,7 @@ if __name__ == '__main__':
                                  streaming=True,
                                  callbaaks=[stream_handler])
                 qa_chain = RetrievalQA.from_chain_type(llm, retriever=db.as_retriever())
-                result = qa_chain({"query": question})
+                qa_chain({"query": question})
 
 
 
