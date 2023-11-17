@@ -1,6 +1,5 @@
 import os
 import tempfile
-# from  dotenv import load_dotenv
 
 #AI
 from langchain.document_loaders import PyPDFLoader
@@ -26,8 +25,6 @@ def pdf_to_document(uploaded_file):
     return pages
 
 if __name__ == '__main__':
-
-    # load_dotenv()
 
     st.title("Chat your PDF!!")
     st.write("----")
