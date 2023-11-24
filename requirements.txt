@@ -6,3 +6,6 @@ tiktoken
 chromadb
 pysqlite3-binary
 pillow
+google-api-python-client
+bs4
+html2text

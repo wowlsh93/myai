@@ -20,8 +20,28 @@ import tempfile
 import os
 # from PIL import Image
 
+from abc import ABC, abstractmethod
+from typing import Any, List
+from langchain.schema import Document
+from langchain.callbacks.manager import Callbacks
+
+from langchain.retrievers.web_research import WebResearchRetriever
+import os
+from langchain.vectorstores import Chroma
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.chat_models.openai import ChatOpenAI
+from langchain.utilities import GoogleSearchAPIWrapper
+from langchain.chains import RetrievalQAWithSourcesChain
+
 
 load_dotenv()
+
+os.environ["GOOGLE_CSE_ID"] = "f3f9e0f4d4b984777"
+os.environ["GOOGLE_API_KEY"] = "AIzaSyDWt5BsWSo0DdZtIBfA5QRVFNzwpTbnKgE"
+os.environ["OPENAI_API_KEY"] = "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"
+
+
+
 
 #Make a temp folder can store uploaded file.
 def pdf_to_document(uploaded_file):
@@ -41,66 +61,132 @@ class StreamingHandler(BaseCallbackHandler):
     def __init__(self, container, initial_text=""):
         self.container = container
         self.text = initial_text
+        pass
 
     def on_llm_new_token(self, token: str, **kwargs) -> None:
         self.text += token
         self.container.markdown(self.text)
+        pass
 
 if __name__ == "__main__":
 
-    # image = Image.open('tt.png')
-    #
-    # st.image(image, width=200)
+    st.header("TT Service")
 
-    st.header('Chat with PDF!!')
+    pdftab, webtab = st.tabs(["PDF", "WEB"])
 
-    uploaded_files = st.file_uploader(
-        'PDF를 업로드해주세요.',
-        accept_multiple_files=True
-    )
-    if uploaded_files:
-        # load text
-        for uploaded_file in uploaded_files:
-            bytes_data = uploaded_file
-            pages = pdf_to_document(bytes_data)
+    with pdftab:
+        pdftab.subheader("Chat with PDF!!")
 
-            # split text
-            text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=500,
-                chunk_overlap=20,
-                length_function=len,
-                # add_start_index=True,
-            )
-            texts = text_splitter.split_documents(pages)
+        uploaded_files = st.file_uploader(
+            'PDF를 업로드해주세요.',
+            accept_multiple_files=True
+        )
+        if uploaded_files:
+            # load text
+            for uploaded_file in uploaded_files:
+                bytes_data = uploaded_file
+                pages = pdf_to_document(bytes_data)
 
-            # embedding and store
-            embedding_model = OpenAIEmbeddings()
-            db = Chroma.from_documents(texts, embedding_model)
+                # split text
+                text_splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=500,
+                    chunk_overlap=20,
+                    length_function=len,
+                    # add_start_index=True,
+                )
+                texts = text_splitter.split_documents(pages)
 
-            st.write(bytes_data.name, ' is uploaded!!')
+                # embedding and store
+                embedding_model = OpenAIEmbeddings()
+                db = Chroma.from_documents(texts, embedding_model)
 
-    st.write('---')
-    # show input box
+                st.write(bytes_data.name, ' is uploaded!!')
 
-    question = st.text_input('질문을 입력해주세요.')
-    if st.button('궁금해', type="primary"):
-        with st.spinner('처리중입니다'):
-            chat_box = st.empty()
-            stream_hander = StreamingHandler(chat_box)
-            myllm = ChatOpenAI(
-                temperature=0,
-                max_tokens=100,
-                streaming=True,
-                callbacks=[stream_hander],
-            )
-            qa = RetrievalQA.from_chain_type(
-                llm=myllm,
-                retriever=db.as_retriever()
-            )
-            answer = qa.run(question)
-            qa.run(question)
+        st.write('---')
+        # show input box
 
-    print('DONE')
+        question = st.text_input('질문을 입력해주세요.',key="1_1")
+        if st.button('궁금해', type="primary", key="1_2"):
+            with st.spinner('처리중입니다'):
+                chat_box = st.empty()
+                stream_hander = StreamingHandler(chat_box)
+                myllm = ChatOpenAI(
+                    temperature=0,
+                    max_tokens=100,
+                    streaming=True,
+                    callbacks=[stream_hander],
+                )
+                qa = RetrievalQA.from_chain_type(
+                    llm=myllm,
+                    retriever=db.as_retriever()
+                )
+                answer = qa.run(question)
+                qa.run(question)
+
+        print('DONE')
+
+
+    with webtab:
+        webtab.subheader("Chat with Web-Link")
+
+        # Vectorstore 셋팅하기
+        vectorstore = Chroma(embedding_function=OpenAIEmbeddings(),
+                             persist_directory="./chroma_db_oai")
+
+        # # Search Query를 위한 LLM
+        # search_llm = ChatOpenAI(temperature=0)
+        #
+        # # SearchAPI Wrapper 객체 생성하기
+        # search = GoogleSearchAPIWrapper()
+        #
+        # # Web Research Retriever 셋팅하기
+        # web_research_retriever = WebResearchRetriever.from_llm(
+        #     vectorstore=vectorstore,
+        #     llm=search_llm,
+        #     search=search,
+        # )
+        #
+        # response_llm = ChatOpenAI(temperature=0.90)
+        # qa_chain = RetrievalQAWithSourcesChain.from_chain_type(response_llm,
+        #                                                        retriever=web_research_retriever)
+        #
+        # user_input = "뉴진스 민지 생일 언제야?"
+        # result = qa_chain({"question": user_input})
+        # result
+        #
+        # st.write('---')
+
+
+        question = st.text_input('질문을 입력해주세요.', key="2_1")
+        if st.button('궁금해', type="primary", key="2_2"):
+            with st.spinner('처리중입니다'):
+                chat_box = st.empty()
+                stream_hander = StreamingHandler(chat_box)
+                search_llm = ChatOpenAI(
+                    temperature=0,
+                    max_tokens=100,
+                    streaming=True,
+                    callbacks=[stream_hander],
+                )
+
+                search = GoogleSearchAPIWrapper()
+
+                web_research_retriever = WebResearchRetriever.from_llm(
+                    vectorstore=vectorstore,
+                    llm=search_llm,
+                    search=search,
+                )
+
+
+                response_llm = ChatOpenAI(temperature=0.90)
+                qa_chain = RetrievalQAWithSourcesChain.from_chain_type(response_llm,
+                                                                       retriever=web_research_retriever)
+                result = qa_chain({"question": question})
+                st.write(result)
+
+        print('DONE')
+
+
 
 
 
