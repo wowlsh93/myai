@@ -18,7 +18,7 @@ from langchain.chains import RetrievalQA
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 import tempfile
 import os
-from PIL import Image
+# from PIL import Image
 
 
 load_dotenv()
@@ -48,9 +48,9 @@ class StreamingHandler(BaseCallbackHandler):
 
 if __name__ == "__main__":
 
-    image = Image.open('tt.png')
-
-    st.image(image, width=200)
+    # image = Image.open('tt.png')
+    #
+    # st.image(image, width=200)
 
     st.header('Chat with PDF!!')
 
