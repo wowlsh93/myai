@@ -37,6 +37,7 @@ from langchain.chains import RetrievalQAWithSourcesChain
 load_dotenv()
 
 
+
 #Make a temp folder can store uploaded file.
 def pdf_to_document(uploaded_file):
     temp_dir = tempfile.TemporaryDirectory()
@@ -127,29 +128,6 @@ if __name__ == "__main__":
         vectorstore = Chroma(embedding_function=OpenAIEmbeddings(),
                              persist_directory="./chroma_db_oai")
 
-        # # Search Query를 위한 LLM
-        # search_llm = ChatOpenAI(temperature=0)
-        #
-        # # SearchAPI Wrapper 객체 생성하기
-        # search = GoogleSearchAPIWrapper()
-        #
-        # # Web Research Retriever 셋팅하기
-        # web_research_retriever = WebResearchRetriever.from_llm(
-        #     vectorstore=vectorstore,
-        #     llm=search_llm,
-        #     search=search,
-        # )
-        #
-        # response_llm = ChatOpenAI(temperature=0.90)
-        # qa_chain = RetrievalQAWithSourcesChain.from_chain_type(response_llm,
-        #                                                        retriever=web_research_retriever)
-        #
-        # user_input = "뉴진스 민지 생일 언제야?"
-        # result = qa_chain({"question": user_input})
-        # result
-        #
-        # st.write('---')
-
 
         question = st.text_input('질문을 입력해주세요.', key="2_1")
         if st.button('궁금해', type="primary", key="2_2"):
@@ -170,7 +148,6 @@ if __name__ == "__main__":
                     llm=search_llm,
                     search=search,
                 )
-
 
                 response_llm = ChatOpenAI(temperature=0.90)
                 qa_chain = RetrievalQAWithSourcesChain.from_chain_type(response_llm,
