@@ -36,12 +36,6 @@ from langchain.chains import RetrievalQAWithSourcesChain
 
 load_dotenv()
 
-os.environ["GOOGLE_CSE_ID"] = "f3f9e0f4d4b984777"
-os.environ["GOOGLE_API_KEY"] = "AIzaSyDWt5BsWSo0DdZtIBfA5QRVFNzwpTbnKgE"
-os.environ["OPENAI_API_KEY"] = "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"
-
-
-
 
 #Make a temp folder can store uploaded file.
 def pdf_to_document(uploaded_file):
