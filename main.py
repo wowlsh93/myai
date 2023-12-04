@@ -34,11 +34,11 @@ from langchain.utilities import GoogleSearchAPIWrapper
 from langchain.chains import RetrievalQAWithSourcesChain
 
 
-load_dotenv()
+# load_dotenv()
 
 os.environ["GOOGLE_CSE_ID"] = "f3f9e0f4d4b984777"
 os.environ["GOOGLE_API_KEY"] = "AIzaSyDWt5BsWSo0DdZtIBfA5QRVFNzwpTbnKgE"
-os.environ["OPENAI_API_KEY"] = "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"
+os.environ["OPENAI_API_KEY"] = "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"
 
 
 
