@@ -38,7 +38,7 @@ from langchain.chains import RetrievalQAWithSourcesChain
 
 os.environ["GOOGLE_CSE_ID"] = "f3f9e0f4d4b984777"
 os.environ["GOOGLE_API_KEY"] = "AIzaSyDWt5BsWSo0DdZtIBfA5QRVFNzwpTbnKgE"
-os.environ["OPENAI_API_KEY"] = "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"
+os.environ["OPENAI_API_KEY"] = "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"
 
 
 
